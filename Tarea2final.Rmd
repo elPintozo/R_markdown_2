@@ -1,0 +1,59 @@
+---
+title: "Tarea2"
+author: "Ricardo Ramírez y Rodrigo Vidal"
+date: "7/15/2019"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r class.source = c("numCode", "R", "numberLines")}
+source("source/asignar_hospital.R") #Script para asignar hospital 
+nombre_alumno = "Ricardo Ramirez - Rodrigo Vidal" 
+mihospital=asignar_hospital(nombre_alumno)
+cat(paste("\t - El establecimiento a cargo de",crayon::bold((nombre_alumno)),
+"\n es el:", crayon::bold((as.character(mihospital$Hospital))),
+"y \n su código es:",crayon::bold((as.character(mihospital$C.digo)))))
+```
+```{r class.source = c("numCode", "R", "numberLines")}
+library(knitr)
+library(kableExtra)
+datos = read.csv("~/Downloads/Prueba2/source/BD/hospitales.csv", sep = ",",header = T, encoding = "latin1") 
+kable(head(datos,20))%>%
+  kable_styling(full_width = F) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  column_spec(2, width = "30em")
+```
+#Actividad 1
+
+#Lista de servicios prestados por todos los hospitales
+```{r class.source = c("numCode", "R", "numberLines")}
+principal = read.csv("~/Downloads/Prueba2/datos/BD_principal.csv", sep = ",",header = T, encoding = "latin1")
+kable(head(principal, 20,))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
+##Lista de servicios prestado solo por el hospital asignado
+```{r class.source = c("numCode", "R", "numberLines")}
+library("dplyr",warn.conflicts = F)
+filtro1=filter(principal, Hospital == mihospital$C.digo)
+kable(head(filtro1, 20))%>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
+
+## Orden descendente de días de estada según servicio
+```{r class.source = c("numCode", "R", "numberLines")}
+filtro2=filtro1[order(filtro1$DIAS_ESTAD, decreasing = TRUE),]
+kable(head(filtro2, 20))%>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
+
+##Días de estada de los pacientes (DE). Esta medición corresponde a los días registrados desde que un paciente es ingresado para ser hospitalizado hasta la fecha de su egreso (alta, fallecimiento o traslado a otra institución)
+
+
+
+
+
+
+
+
