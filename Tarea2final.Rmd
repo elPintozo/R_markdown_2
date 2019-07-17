@@ -24,16 +24,16 @@ kable(head(datos,20))%>%
   column_spec(1, bold = T, border_right = T) %>%
   column_spec(2, width = "30em")
 ```
-#Actividad 1
+# Actividad 1
 
-#Lista de servicios prestados por todos los hospitales
+# Lista de servicios prestados por todos los hospitales
 ```{r class.source = c("numCode", "R", "numberLines")}
 principal = read.csv("~/Downloads/Prueba2/datos/BD_principal.csv", sep = ",",header = T, encoding = "latin1")
 kable(head(principal, 20,))%>%
   kable_styling(full_width = F) %>%
   kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
 ```
-##Lista de servicios prestado solo por el hospital asignado
+## Lista de servicios prestado solo por el hospital asignado
 ```{r class.source = c("numCode", "R", "numberLines")}
 library("dplyr",warn.conflicts = F)
 filtro1=filter(principal, Hospital == mihospital$C.digo)
@@ -48,12 +48,52 @@ kable(head(filtro2, 20))%>%
   kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
 ```
 
-##Días de estada de los pacientes (DE). Esta medición corresponde a los días registrados desde que un paciente es ingresado para ser hospitalizado hasta la fecha de su egreso (alta, fallecimiento o traslado a otra institución)
+## Días de estada de los pacientes (DE). Esta medición corresponde a los días registrados desde que un paciente es ingresado para ser hospitalizado hasta la fecha de su egreso (alta, fallecimiento o traslado a otra institución)
 
 
 
+# Actividad 2
+
+## Lista de servicios prestado solo por el hospital asignado
+```{r class.source = c("numCode", "R", "numberLines")}
+library("dplyr",warn.conflicts = F)
+filtro1=filter(principal, Hospital == mihospital$C.digo)
+kable(head(filtro1[,c(1,11,15,17)], 20))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
+INTERV_Q:Intervención Quirúrgica, los valores aceptados son:
+1 = Sí
+2 = No
+## Rango de fecha
+```{r class.source = c("numCode", "R", "numberLines")}
+rango_fecha = range(as.Date(filtro1$FECHA_EGR, format = "%d/%m/%Y"))
+print(rango_fecha)
+```
+## Total de invervenciones
+```{r class.source = c("numCode", "R", "numberLines")}
+filtro_intervecion = filter(filtro1, INTERV_Q == 1)
+cat("De un total de ",count(filtro1)$n,"atenciones, se logró llevar\n
+a cabo un total ",count(filtro_intervecion)$n," de intervenciones quirúrgicas")
+```
+## tabla de intervenciones por mes durante el año 2017
+```{r class.source = c("numCode", "R", "numberLines")}
+tabla_por_mes = aggregate(filtro_intervecion$INTERV_Q, by=list(MESES= months(as.Date(filtro_intervecion$FECHA_EGR, format = "%d/%m/%Y"))), FUN=sum)
+kable(head(tabla_por_mes, 12))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
 
 
+## Tabla de contingencia
 
-
-
+```{r class.source = c("numCode", "R", "numberLines")}
+library("ggplot2")
+grafico=ggplot(filtro1,aes(filtro1$DIAS_ESTAD)) # Gráfico y datos base
+#Histograma (25 niveles) (colores- http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf)
+grafico = grafico + geom_histogram(bins=25,fill="navajowhite",color="orange3")
+grafico = grafico + theme_bw() # Visualización estándar en blanco y negro
+grafico = grafico + ylab("Frecuencia absotula (Cantidad Pacientes)") + xlab("Dias Estada")
+grafico = grafico + ggtitle("Histograma de días de estada en general")
+plot(grafico)
+```
