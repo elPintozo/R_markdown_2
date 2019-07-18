@@ -18,45 +18,185 @@ cat(paste("\t - El establecimiento a cargo de",crayon::bold((nombre_alumno)),
 ```{r class.source = c("numCode", "R", "numberLines")}
 library(knitr)
 library(kableExtra)
-datos = read.csv("~/Downloads/Prueba2/source/BD/hospitales.csv", sep = ",",header = T, encoding = "latin1") 
+datos = read.csv("source/BD/hospitales.csv", sep = ",",header = T, encoding = "latin1") 
 kable(head(datos,20))%>%
   kable_styling(full_width = F) %>%
   column_spec(1, bold = T, border_right = T) %>%
   column_spec(2, width = "30em")
 ```
 # Actividad 1
-
-# Lista de servicios prestados por todos los hospitales
+## -------
 ```{r class.source = c("numCode", "R", "numberLines")}
-principal = read.csv("~/Downloads/Prueba2/datos/BD_principal.csv", sep = ",",header = T, encoding = "latin1")
-kable(head(principal, 20,))%>%
-  kable_styling(full_width = F) %>%
-  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+  source("source/asignar_hospital.R") #Script para asignar hospital
+nombre_alumno = "Ricardo Ramírez - Rodrigo Vidal"
+mihospital=asignar_hospital(nombre_alumno)
+cat(paste("\t - El establecimiento a cargo de",crayon::bold((nombre_alumno)),
+"\n es el:", crayon::bold((as.character(mihospital$Hospital))),
+"y \n su código es:",crayon::bold((as.character(mihospital$C.digo)))))
 ```
-## Lista de servicios prestado solo por el hospital asignado
+
+
+```{r class.source = c("numCode", "R", "numberLines")}
+library(knitr)
+library(kableExtra)
+# Lista de los hospitales
+hospitales_general = read.csv("source/BD/hospitales.csv", sep = ",",header = T, encoding = "latin1")
+#kable(head(hospitales_general, 100))%>%
+#kable_styling(full_width = T)
+```
+
+
+
+```{r class.source = c("numCode", "R", "numberLines")}
+library(knitr)
+library(kableExtra)
+# Datos totales de los hospitales
+datos_general = read.csv("datos/BD_principal.csv", sep = ",",header = T, encoding = "latin1") 
+#kable(head(datos_general, 20))%>%
+#kable_styling(full_width = T)
+#kable_styling(latex_options = "striped", full_width = T) # Aplicación de estilos a la tabla
+```
+
+
 ```{r class.source = c("numCode", "R", "numberLines")}
 library("dplyr",warn.conflicts = F)
-filtro1=filter(principal, Hospital == mihospital$C.digo)
-kable(head(filtro1, 20))%>%
-  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+filtro_codigo=filter(datos_general, Hospital == mihospital$C.digo)
+filtro_codigo=filtro_codigo[order(filtro_codigo$DIAS_ESTAD, decreasing = TRUE),]
+#kable(filtro_codigo)
+#kable(head(filtro_codigo, 20))%>%
+#kable_styling(latex_options = "striped")# Aplicación de estilos a la tabla
 ```
 
-## Orden descendente de días de estada según servicio
+### Tabla de frecuencia de los días de Estada de los pacientes en general en el hospital San José de Melipilla
+
 ```{r class.source = c("numCode", "R", "numberLines")}
-filtro2=filtro1[order(filtro1$DIAS_ESTAD, decreasing = TRUE),]
-kable(head(filtro2, 20))%>%
-  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+library(agricolae)
+tabla_freq_DE=table.freq(hist(filtro_codigo$DIAS_ESTAD,breaks = "Sturges",plot=FALSE))# Trabla de frecuencia de Días Estada
+kable(tabla_freq_DE)%>%
+kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla 
 ```
 
-## Días de estada de los pacientes (DE). Esta medición corresponde a los días registrados desde que un paciente es ingresado para ser hospitalizado hasta la fecha de su egreso (alta, fallecimiento o traslado a otra institución)
+### Rango de máximo de días y mínimo de días de estada en el hospital
+```{r class.source = c("numCode", "R", "numberLines")}
+rango=range(filtro_codigo$DIAS_ESTAD) # Rango mínimo y máximo de días de Estada
+rango
+```
 
 
+### Histograma de distribución de los días de estada totales en el hospital
+```{r class.source = c("numCode", "R", "numberLines")}
+library("ggplot2")
+grafico=ggplot(filtro_codigo,aes(filtro_codigo$DIAS_ESTAD)) # Gráfico y datos base
+#Histograma (25 niveles) (colores- http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf)
+grafico = grafico + geom_histogram(bins=NULL,fill="navajowhite",color="orange3")
+grafico = grafico + theme_bw() # Visualización estándar en blanco y negro
+grafico = grafico + ylab("Frecuencia absotula (Cantidad Pacientes)") + xlab("Dias Estada")
+grafico = grafico + ggtitle("Histograma de días de estada en general")
+plot(grafico)
+```
 
+
+## Actividad 1 - Estadística inferencial: comparación de medidas de localización
+
+### Histograma de servicios vs días de estada
+
+```{r class.source = c("numCode", "R", "numberLines")}
+#ggplot(data=filtro_codigo, aes(x=factor(filtro_codigo$SERC_EGR),y=filtro_codigo$DIAS_ESTAD)) +
+#geom_bar(stat="identity", position="stack") + 
+#ylab("Días Estada") + xlab("Servicios")
+```
+
+### tabla de días estada según servicio
+
+```{r class.source = c("numCode", "R", "numberLines")}
+tabla_dias_servicio = aggregate(filtro_codigo$DIAS_ESTAD, by=list(SERVICIO=filtro_codigo$SERC_EGR), FUN=sum)
+
+print(tabla_dias_servicio)
+```
+
+
+```{r class.source = c("numCode", "R", "numberLines")}
+ggplot(data=tabla_dias_servicio, aes(x=factor(tabla_dias_servicio$SERVICIO),y=tabla_dias_servicio$x)) +
+geom_bar(stat="identity", position="stack") + 
+ylab("Días Estada") + xlab("Servicios")
+```
+
+
+## Pruebas de normalidad
+
+### Aplicando un nivel de significancia de 0.1, se plante la hipótesis de que la distribución es normal H0.
+
+```{r class.source = c("numCode", "R", "numberLines")}
+library("nortest")
+tabla_dias_servicio_norm = tabla_dias_servicio
+mean = mean(tabla_dias_servicio_norm$x)
+sd = sd(tabla_dias_servicio_norm$x)
+tabla_dias_servicio_norm$x=rnorm(9, mean = mean, sd = sd)
+
+cat("Prueba Shapiro-Wilk " ,shapiro.test(tabla_dias_servicio_norm$x)$p.value, "\n")
+cat("Prueba Lillie (Kolmogorov-Smirnov) ", lillie.test(tabla_dias_servicio_norm$x)$p.value, "\n")
+cat("Prueba Anderson-Darling ", ad.test(tabla_dias_servicio_norm$x)$p.value, "\n")
+cat("Prueba Cramer-von Mises ", cvm.test(tabla_dias_servicio_norm$x)$p.value, "\n")
+cat("Prueba Pearson chi-square ", pearson.test(tabla_dias_servicio_norm$x)$p.value, "\n")
+cat("Prueba Shapiro-Francia ", sf.test(tabla_dias_servicio_norm$x)$p.value, "\n")
+```
+
+### Según resultados, el p value es inferior al 0.1 por lo que se rechaza la hipótesis H0, lo que indica que la distribución NO es normal.
+
+## Prueba de Homocedasticidad
+```{r}
+fligner.test(x = list(tabla_dias_servicio_norm$x,tabla_dias_servicio_norm$SERVICIO))
+```
+```{r}
+kruskal.test(tabla_dias_servicio_norm$x~ as.factor(tabla_dias_servicio_norm$SERVICIO),data=tabla_dias_servicio_norm)
+```
+
+
+# Comparación con los demás hospitales
+
+```{r class.source = c("numCode", "R", "numberLines")}
+#tabla_dias_servicio_general = aggregate(datos_general$DIAS_ESTAD, by=list(SERVICIO=datos_general$SERC_EGR), FUN=sum)
+tabla_dias_servicio_general = aggregate(datos_general$DIAS_ESTAD, by=list(SERVICIO=datos_general$SERC_EGR), FUN=sum)
+
+filtro_servicios_otros_hospitales=filter(datos_general, datos_general$Hospital != mihospital$C.digo & (datos_general$SERC_EGR == 416 | datos_general$SERC_EGR == 403 | datos_general$SERC_EGR == 404))
+tabla_servicios_otros_hospitales_agr = aggregate(filtro_servicios_otros_hospitales$DIAS_ESTAD, by=list(SERVICIO=filtro_servicios_otros_hospitales$SERC_EGR), FUN=sum)
+
+filtro_servicios_mi_hospital=filter(datos_general,datos_general$Hospital == mihospital$C.digo & (datos_general$SERC_EGR == 416 | datos_general$SERC_EGR == 403 | datos_general$SERC_EGR == 404))
+tabla_servicios_mi_hospitale_agr = aggregate(filtro_servicios_mi_hospital$DIAS_ESTAD, by=list(SERVICIO=filtro_servicios_mi_hospital$SERC_EGR), FUN=sum)
+
+
+tabla_dias_servicio_general_desc = tabla_dias_servicio_general[order(tabla_dias_servicio_general$x, decreasing = TRUE),]
+
+#kable(tabla_dias_servicio_general_desc)
+kable(head(tabla_dias_servicio_general_desc, 20))%>%
+kable_styling(latex_options = "striped")# Aplicación de estilos a la tabla
+print(tabla_servicios_otros_hospitales_agr)
+print(tabla_servicios_mi_hospitale_agr)
+```
+
+
+### Histograma general servicios 403, 404, 416
+```{r}
+ggplot(data=tabla_servicios_otros_hospitales_agr, aes(x=factor(tabla_servicios_otros_hospitales_agr$SERVICIO),y=tabla_servicios_otros_hospitales_agr$x)) +
+geom_bar(stat="identity", position="stack") + 
+ylab("Días Estada") + xlab("Servicios")
+```
+
+
+### Histograma mi hospital servicios 403, 404, 416
+```{r}
+ggplot(data=tabla_servicios_mi_hospitale_agr, aes(x=factor(tabla_servicios_mi_hospitale_agr$SERVICIO),y=tabla_servicios_mi_hospitale_agr$x)) +
+geom_bar(stat="identity", position="stack") + 
+ylab("Días Estada") + xlab("Servicios")
+```
+
+## -------
 # Actividad 2
 
 ## Lista de servicios prestado solo por el hospital asignado
 ```{r class.source = c("numCode", "R", "numberLines")}
 library("dplyr",warn.conflicts = F)
+principal = read.csv("~/Downloads/Prueba2/datos/BD_principal.csv", sep = ",",header = T, encoding = "latin1")
 filtro1=filter(principal, Hospital == mihospital$C.digo)
 kable(head(filtro1[,c(1,11,15,17)], 20))%>%
   kable_styling(full_width = F) %>%
@@ -73,27 +213,91 @@ print(rango_fecha)
 ## Total de invervenciones
 ```{r class.source = c("numCode", "R", "numberLines")}
 filtro_intervecion = filter(filtro1, INTERV_Q == 1)
-cat("De un total de ",count(filtro1)$n,"atenciones, se logró llevar\n
-a cabo un total ",count(filtro_intervecion)$n," de intervenciones quirúrgicas")
+filtro_intervecion2 = filter(filtro1, INTERV_Q == 2)
+cat("De un total de ",count(filtro1)$n,"atenciones, se logró llevar a cabo un total ",count(filtro_intervecion)$n," de intervenciones \n quirúrgicas, mientras que",count(filtro_intervecion2)$n,"no acabaron en una intervensión.")
 ```
 ## tabla de intervenciones por mes durante el año 2017
 ```{r class.source = c("numCode", "R", "numberLines")}
+library(kableExtra)
 tabla_por_mes = aggregate(filtro_intervecion$INTERV_Q, by=list(MESES= months(as.Date(filtro_intervecion$FECHA_EGR, format = "%d/%m/%Y"))), FUN=sum)
+tabla_por_mes2 = aggregate(filtro_intervecion2$INTERV_Q, by=list(MESES= months(as.Date(filtro_intervecion2$FECHA_EGR, format = "%d/%m/%Y"))), FUN=sum)
+
 kable(head(tabla_por_mes, 12))%>%
   kable_styling(full_width = F) %>%
   kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
-```
 
+kable(head(tabla_por_mes2, 12))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
+```{r class.source = c("numCode", "R", "numberLines")}
+library("ggplot2")
+ggplot(data=tabla_por_mes, aes(x=factor(tabla_por_mes$MESES),y=tabla_por_mes$x)) +
+geom_bar(stat="identity", position="stack") + 
+ylab("Total de intervenciones") + xlab("Meses")
+```
 
 ## Tabla de contingencia
 
 ```{r class.source = c("numCode", "R", "numberLines")}
-library("ggplot2")
-grafico=ggplot(filtro1,aes(filtro1$DIAS_ESTAD)) # Gráfico y datos base
-#Histograma (25 niveles) (colores- http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf)
-grafico = grafico + geom_histogram(bins=25,fill="navajowhite",color="orange3")
-grafico = grafico + theme_bw() # Visualización estándar en blanco y negro
-grafico = grafico + ylab("Frecuencia absotula (Cantidad Pacientes)") + xlab("Dias Estada")
-grafico = grafico + ggtitle("Histograma de días de estada en general")
-plot(grafico)
+suma_total = sum(tabla_por_mes$x)
+suma_total2 = count(filtro_intervecion2)$n
+
+suma_meses_vacaciones = sum(tabla_por_mes$x[4]+tabla_por_mes$x[5]+tabla_por_mes$x[8])
+suma_meses_vacaciones2 = sum(tabla_por_mes2$x[4]+tabla_por_mes2$x[5]+tabla_por_mes2$x[8])
+
+suma_resto_del_anio = sum(tabla_por_mes$x)-suma_meses_vacaciones
+suma_resto_del_anio2 = count(filtro_intervecion2)$n-suma_meses_vacaciones2
+
+cat("De un total de ",count(filtro1)$n,"prestaciones realizadas por el hospital, solo" ,suma_total," fueron intervensiones y \n ",suma_total2," no llegaron a una. Durante los meses de vacaciones(Enero y Febrero) se llevaron a \n cabo ",suma_meses_vacaciones,"intervesiones mientras que el",suma_meses_vacaciones2, " prestaciones en la misma fecha no \n llegaron a una, mientras que el resto del años se lograron",suma_resto_del_anio," intervensionesm, mientras que \n ",suma_resto_del_anio2, "prestaciones en ese mismo tiempo no llegaron a una")
+
+#Datos
+filas=c("Intervension","no Intervension")
+vacaciones = c(suma_meses_vacaciones,suma_meses_vacaciones2)
+resto= c(suma_resto_del_anio,suma_resto_del_anio2)
+
+#Creación de tabla
+tabla=data.matrix(data.frame(vacaciones,resto))
+rownames(tabla)=filas
+
+#Prueba de Chi cuadrado
+resultado=chisq.test(tabla)
+print(resultado)
+
+#Frecuencia observada
+resultado$observed
+
+#Frecuencia esperada
+resultado$expected
+
+#Residuos
+resultado$residuals
+
+cat("De lo anterior podemos concluir que se rechaza H0(los médicos no se coordinan y la mayor parte se va de vacaciones durante los meses de enero a marzo, no operando a los pacientes durante esa fecha disminuyendo las intervenciones quirúrgicas en ese período, retardando las altas médicas)")
+```
+
+## Actividad 3 - Análisis de regresión lineal
+
+```{r}
+library(agricolae)
+
+tabla_fallecidos = filter(datos_general, datos_general$COND_EGR != 2)
+
+tabla_fallecidos_diag_total = aggregate(tabla_fallecidos$Hospital, by=list(DIAGNOSTICO=tabla_fallecidos$DIAG1), FUN=sum)
+
+tabla_fallecidos_diag_sexo = aggregate(tabla_fallecidos$SEXO, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+
+tabla_fallecidos_diag_edad = aggregate(tabla_fallecidos$EDAD, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+
+tabla_fallecidos_diag_prevision = aggregate(tabla_fallecidos$PREVI, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+
+tabla_fallecidos_diag_servicio = aggregate(tabla_fallecidos$SERC_EGR, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+
+tabla_fallecidos_diag_intervencion = aggregate(tabla_fallecidos$INTERV_Q, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+
+print(tabla_fallecidos_diag_sexo)
+print(tabla_fallecidos_diag_edad)
+print(tabla_fallecidos_diag_prevision)
+print(tabla_fallecidos_diag_servicio)
+print(tabla_fallecidos_diag_intervencion)
 ```
