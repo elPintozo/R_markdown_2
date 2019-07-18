@@ -1,7 +1,7 @@
 ---
-title: "Tarea2"
+title: "Prueba Especial Programada 2"
 author: "Ricardo Ramírez y Rodrigo Vidal"
-date: "7/15/2019"
+date: "18/07/2019"
 output: 
   pdf_document: 
     latex_engine: xelatex
@@ -25,7 +25,7 @@ kable(head(datos,20))%>%
   column_spec(2, width = "30em")
 ```
 # Actividad 1
-## -------
+
 ```{r class.source = c("numCode", "R", "numberLines")}
   source("source/asignar_hospital.R") #Script para asignar hospital
 nombre_alumno = "Ricardo Ramírez - Rodrigo Vidal"
@@ -76,25 +76,6 @@ kable(tabla_freq_DE)%>%
 kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla 
 ```
 
-### Rango de máximo de días y mínimo de días de estada en el hospital
-```{r class.source = c("numCode", "R", "numberLines")}
-rango=range(filtro_codigo$DIAS_ESTAD) # Rango mínimo y máximo de días de Estada
-rango
-```
-
-
-### Histograma de distribución de los días de estada totales en el hospital
-```{r class.source = c("numCode", "R", "numberLines")}
-library("ggplot2")
-grafico=ggplot(filtro_codigo,aes(filtro_codigo$DIAS_ESTAD)) # Gráfico y datos base
-#Histograma (25 niveles) (colores- http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf)
-grafico = grafico + geom_histogram(bins=NULL,fill="navajowhite",color="orange3")
-grafico = grafico + theme_bw() # Visualización estándar en blanco y negro
-grafico = grafico + ylab("Frecuencia absotula (Cantidad Pacientes)") + xlab("Dias Estada")
-grafico = grafico + ggtitle("Histograma de días de estada en general")
-plot(grafico)
-```
-
 
 ## Actividad 1 - Estadística inferencial: comparación de medidas de localización
 
@@ -116,6 +97,7 @@ print(tabla_dias_servicio)
 
 
 ```{r class.source = c("numCode", "R", "numberLines")}
+library("ggplot2")
 ggplot(data=tabla_dias_servicio, aes(x=factor(tabla_dias_servicio$SERVICIO),y=tabla_dias_servicio$x)) +
 geom_bar(stat="identity", position="stack") + 
 ylab("Días Estada") + xlab("Servicios")
@@ -124,7 +106,7 @@ ylab("Días Estada") + xlab("Servicios")
 
 ## Pruebas de normalidad
 
-### Aplicando un nivel de significancia de 0.1, se plante la hipótesis de que la distribución es normal H0.
+### Aplicando un nivel de significancia de 0.05, se plante la hipótesis de que la distribución es normal H0.
 
 ```{r class.source = c("numCode", "R", "numberLines")}
 library("nortest")
@@ -147,10 +129,15 @@ cat("Prueba Shapiro-Francia ", sf.test(tabla_dias_servicio_norm$x)$p.value, "\n"
 ```{r}
 fligner.test(x = list(tabla_dias_servicio_norm$x,tabla_dias_servicio_norm$SERVICIO))
 ```
+
+## Test de Kruskal Walls para prueba de contraste
+
 ```{r}
 kruskal.test(tabla_dias_servicio_norm$x~ as.factor(tabla_dias_servicio_norm$SERVICIO),data=tabla_dias_servicio_norm)
 ```
 
+
+### Conclusión: Según pruebas aplicadas, los valores del pvalue obtenidos, están por sobre el margen de significancia del 0.05, por lo que se rechaza la hipótesis que indica que la distribución de los datos es normal.
 
 # Comparación con los demás hospitales
 
@@ -190,13 +177,13 @@ geom_bar(stat="identity", position="stack") +
 ylab("Días Estada") + xlab("Servicios")
 ```
 
-## -------
+
 # Actividad 2
 
 ## Lista de servicios prestado solo por el hospital asignado
 ```{r class.source = c("numCode", "R", "numberLines")}
 library("dplyr",warn.conflicts = F)
-principal = read.csv("~/Downloads/Prueba2/datos/BD_principal.csv", sep = ",",header = T, encoding = "latin1")
+principal = read.csv("datos/BD_principal.csv", sep = ",",header = T, encoding = "latin1")
 filtro1=filter(principal, Hospital == mihospital$C.digo)
 kable(head(filtro1[,c(1,11,15,17)], 20))%>%
   kable_styling(full_width = F) %>%
@@ -283,21 +270,71 @@ library(agricolae)
 
 tabla_fallecidos = filter(datos_general, datos_general$COND_EGR != 2)
 
-tabla_fallecidos_diag_total = aggregate(tabla_fallecidos$Hospital, by=list(DIAGNOSTICO=tabla_fallecidos$DIAG1), FUN=sum)
 
-tabla_fallecidos_diag_sexo = aggregate(tabla_fallecidos$SEXO, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+tabla_fallecidos_suma = aggregate(tabla_fallecidos$SEXO, by=list(DIAG1=tabla_fallecidos$DIAG1), FUN=sum)
 
-tabla_fallecidos_diag_edad = aggregate(tabla_fallecidos$EDAD, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+tabla_fallecidos_suma_desc = tabla_fallecidos_suma[order(tabla_fallecidos_suma$x, decreasing = TRUE),]
 
-tabla_fallecidos_diag_prevision = aggregate(tabla_fallecidos$PREVI, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+```
 
-tabla_fallecidos_diag_servicio = aggregate(tabla_fallecidos$SERC_EGR, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+```{r}
+kable(head(tabla_fallecidos_suma_desc, 5))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
 
-tabla_fallecidos_diag_intervencion = aggregate(tabla_fallecidos$INTERV_Q, by=list(Category=tabla_fallecidos$DIAG1), FUN=sum)
+### La mayor tasa de muertes lo tiene el diagnóstico PARTO UNICO ESPONTANEO, PRESENTACION CEFALICA DE VERTICE
 
-print(tabla_fallecidos_diag_sexo)
-print(tabla_fallecidos_diag_edad)
-print(tabla_fallecidos_diag_prevision)
-print(tabla_fallecidos_diag_servicio)
-print(tabla_fallecidos_diag_intervencion)
+## Tabla muertes por Sexo
+
+```{r}
+tabla_fallecidos_sexo = filter(tabla_fallecidos, DIAG1 == 'O800')
+tabla_fallecidos_suma_sexo = aggregate(tabla_fallecidos_sexo$SEXO, by=list(SEXO=tabla_fallecidos_sexo$SEXO), FUN=sum)
+kable(head(tabla_fallecidos_suma_sexo, 5))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
+
+
+## Tabla muertes por Edad
+
+```{r}
+tabla_fallecidos_edad = filter(tabla_fallecidos, DIAG1 == 'O800')
+tabla_fallecidos_suma_edad = aggregate(tabla_fallecidos_edad$EDAD, by=list(EDAD=tabla_fallecidos_edad$EDAD), FUN=sum)
+kable(head(tabla_fallecidos_suma_edad, 5))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
+
+
+## Tabla muertes por Previsión de salud
+
+```{r}
+tabla_fallecidos_prev = filter(tabla_fallecidos, DIAG1 == 'O800')
+tabla_fallecidos_suma_prev = aggregate(tabla_fallecidos_prev$PREVI, by=list(PREVI=tabla_fallecidos_prev$PREVI), FUN=sum)
+kable(head(tabla_fallecidos_suma_prev, 5))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
+
+
+## Tabla muertes por Servicio Clínico
+
+```{r}
+tabla_fallecidos_serv = filter(tabla_fallecidos, DIAG1 == 'O800')
+tabla_fallecidos_suma_serv = aggregate(tabla_fallecidos_serv$SERC_EGR, by=list(SERC_EGR=tabla_fallecidos_serv$SERC_EGR), FUN=sum)
+kable(head(tabla_fallecidos_suma_serv, 5))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
+```
+
+
+## Tabla muertes por Intervención Quirúrgica
+
+```{r}
+tabla_fallecidos_inter = filter(tabla_fallecidos, DIAG1 == 'O800')
+tabla_fallecidos_suma_inter = aggregate(tabla_fallecidos_inter$INTERV_Q, by=list(INTERV_Q=tabla_fallecidos_inter$INTERV_Q), FUN=sum)
+kable(head(tabla_fallecidos_suma_inter, 5))%>%
+  kable_styling(full_width = F) %>%
+  kable_styling(latex_options = "striped") # Aplicación de estilos a la tabla
 ```
